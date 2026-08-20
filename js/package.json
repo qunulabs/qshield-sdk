@@ -1,0 +1,57 @@
+{
+  "name": "@qnulabs/qshield-sdk",
+  "version": "0.15.2",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.js"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "clean": "node scripts/clean.mjs",
+    "version:write": "node scripts/write-version.mjs",
+    "prepare": "node scripts/write-version.mjs",
+    "build": "pnpm run version:write && pnpm run clean && tsc -p tsconfig.build.json && tsc -p tsconfig.cjs.json && node scripts/write-output-manifests.mjs",
+    "test": "pnpm run version:write && node scripts/clean-test-out.mjs && tsc -p tsconfig.test.json && node --test \".test-out/**/*.test.js\"",
+    "typecheck": "pnpm run version:write && tsc -p tsconfig.json --noEmit",
+    "lint": "pnpm run version:write && eslint .",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.1.1",
+    "eslint": "^10.7.0",
+    "globals": "^17.7.0",
+    "prettier": "^3.9.6",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.65.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qunulabs/qshield-sdk.git",
+    "directory": "js"
+  }
+}

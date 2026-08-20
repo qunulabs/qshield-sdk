@@ -1,0 +1,23 @@
+{
+  // The CommonJS half of the dual build. Node16 resolution cannot be paired with
+  // a CommonJS emit, and node10 resolution is deprecated in TypeScript 6, so the
+  // resolver here is "bundler". It only affects how the compiler finds modules
+  // while typechecking; the emit is still plain CommonJS. The package has zero
+  // runtime dependencies and only relative imports, so the choice of resolver
+  // has no effect on what is produced.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    // No source maps in the published build. `files` ships dist only, so a map
+    // would point at src paths the consumer does not have. The base config keeps
+    // them on for local development, type checking and tests.
+    "sourceMap": false,
+    "declarationMap": false,
+    "module": "commonjs",
+    "moduleResolution": "bundler",
+    "verbatimModuleSyntax": false,
+    "outDir": "dist/cjs",
+    "rootDir": "src"
+  },
+  "include": ["src/**/*"]
+}

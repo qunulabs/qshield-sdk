@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    // No source maps in the published build. `files` ships dist only, so a map
+    // would point at src paths the consumer does not have. The base config keeps
+    // them on for local development, type checking and tests.
+    "sourceMap": false,
+    "declarationMap": false,
+    "module": "node16",
+    "moduleResolution": "node16",
+    "outDir": "dist/esm",
+    "rootDir": "src"
+  },
+  "include": ["src/**/*"]
+}
