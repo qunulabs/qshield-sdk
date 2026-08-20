@@ -1,31 +1,22 @@
-# Publishes @qnulabs/qshield-sdk to npm from the public mirror.
+# Publishes @qnulabs/qshield-sdk to npm on a release tag.
 #
-# THIS FILE IS GENERATED. It is written from sdk/mirror/ in qunulabs/qshield by
-# that repository's .github/workflows/release-sdk.yml. Edit it there. A change made
-# in this repository is removed by the next release.
+# AUTHENTICATION IS npm TRUSTED PUBLISHING OVER GITHUB OIDC. The credential is
+# minted for this job and expires with it, so no npm token is stored anywhere.
+# NODE_AUTH_TOKEN is deliberately never set: its absence is what makes the npm
+# CLI reach for the OIDC exchange instead of looking for a stored credential.
 #
-# WHY THE PUBLISH LIVES IN A PUBLIC REPOSITORY AND NOT IN THE MONOREPO: npm
-# authenticates this publish with trusted publishing over GitHub OIDC, a
-# short-lived job-scoped credential rather than a stored npm token. npm accepts
-# that exchange only from GitHub-hosted runners, and the monorepo has none
-# available. Public repositories get GitHub-hosted runners for free. Being public
-# also lets npm generate PROVENANCE, which it has refused for packages built from
-# private source repositories since July 2023.
+# GITHUB-HOSTED RUNNERS ONLY, for two independent reasons. npm does not accept
+# the OIDC exchange from a self-hosted runner, and a self-hosted runner attached
+# to a public repository will execute code from any fork's pull request.
 #
-# GITHUB-HOSTED RUNNERS ONLY. Never point this workflow at a self-hosted runner.
-# It would break the OIDC exchange, and attaching a self-hosted runner to a public
-# repository lets any fork's pull request execute arbitrary code on it.
+# THE FILENAME IS PART OF THE OIDC SUBJECT npm matches against the trusted
+# publisher configuration for this package. Renaming this file, or adding an
+# `environment:` key to the job, changes that subject, and npm refuses the
+# publish until the setting on npmjs.com is changed to match.
 #
-# THE FILENAME IS PINNED ON THE NPM SIDE. `publish-npm.yml` is part of the OIDC
-# subject npm matches against the trusted-publisher configuration for
-# @qnulabs/qshield-sdk. Renaming this file, or adding an `environment:` key to the
-# job, changes that subject and npm refuses the publish until the setting on
-# npmjs.com is changed to match.
-#
-# NPM PUBLISHES ARE PERMANENT. The gate that decides whether this version is fit
-# to publish already ran in the monorepo, against the whole platform, before the
-# tag arrived here. The checks below re-run the SDK's own suite so provenance
-# attests a build that was verified in the repository it claims to come from.
+# NPM PUBLISHES ARE PERMANENT. A version cannot be withdrawn once released, only
+# deprecated and superseded. That is why the package is rebuilt and its contents
+# checked here rather than taken on trust.
 
 name: publish-npm
 
@@ -33,9 +24,8 @@ on:
   push:
     tags:
       - "v*"
-  # Retry a publish for a tag that is already here, without re-releasing from the
-  # monorepo. This is the supported recovery path when the mirror received the tag
-  # but npm rejected the publish.
+  # Retry the publish for a tag that already exists here. This is the recovery
+  # path when the tag landed but npm rejected the publish.
   workflow_dispatch:
     inputs:
       tag:
@@ -62,23 +52,20 @@ jobs:
         with:
           ref: ${{ github.event.inputs.tag || github.ref_name }}
 
-      # The monorepo only ever pushes plain release tags here, so anything else is
-      # a mistake rather than a normal event. Fail rather than skip: unlike the
-      # monorepo side, there is no legitimate prerelease traffic to stay quiet
-      # about.
+      # Only a plain release tag is publishable, so anything else is a mistake
+      # rather than a normal event and fails loudly.
       - name: Check the tag against the manifest
         env:
           RAW_TAG: ${{ github.event.inputs.tag || github.ref_name }}
         run: |
           set -euo pipefail
           if [[ ! "${RAW_TAG}" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-            echo "::error::${RAW_TAG} is not a plain release tag. The mirror publishes vMAJOR.MINOR.PATCH only."
+            echo "::error::${RAW_TAG} is not a plain release tag. Only vMAJOR.MINOR.PATCH is published."
             exit 1
           fi
           tag_version="${BASH_REMATCH[1]}"
           manifest_version="$(node -p 'require("./package.json").version')"
-          # The version is written into the manifest by the monorepo when it stages
-          # this snapshot. If the two disagree, the snapshot and the tag came from
+          # The tag and the manifest must agree. If they do not, the two came from
           # different releases and neither can be trusted.
           if [ "${tag_version}" != "${manifest_version}" ]; then
             echo "::error::tag ${RAW_TAG} does not match the manifest version ${manifest_version}"
@@ -110,9 +97,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Re-run rather than trust the monorepo's gate. Provenance attests that this
-      # artefact was built by this workflow from this commit, so the checks that
-      # back that claim have to run here too.
+      # Provenance attests that this artefact was built by this workflow from this
+      # commit, so the checks that stand behind that claim run here rather than
+      # being taken on trust from anywhere else.
       - name: Lint
         run: pnpm lint
 
@@ -138,9 +125,9 @@ jobs:
           echo "${contents}"
 
           # LICENSE is included by npm whatever `files` says, and must be: the
-          # package declares Apache-2.0 and a declared licence with no text is what
-          # a customer's dependency scanner flags. There is deliberately no README
-          # in this directory, so none can reach the tarball.
+          # package declares Apache-2.0, and a declared licence with no text is
+          # what a dependency scanner flags. There is deliberately no README in
+          # this directory, so none can reach the tarball.
           unexpected="$(echo "${contents}" | grep -v -E '^package/(package\.json|LICENSE|dist/)' || true)"
           if [ -n "${unexpected}" ]; then
             echo "::error::the tarball carries files that must not be published:"

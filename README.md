@@ -1,32 +1,35 @@
 # qshield SDKs
 
-Client libraries for [qshield](https://qnulabs.com), published from here.
+Client libraries for automating [qshield](https://qnulabs.com) from your own code.
 
-| Language | Package | Directory |
+| Language | Package | Source |
 | --- | --- | --- |
 | TypeScript / Node | [`@qnulabs/qshield-sdk`](https://www.npmjs.com/package/@qnulabs/qshield-sdk) | [`js/`](./js) |
 
+## Install
+
+```sh
+npm install @qnulabs/qshield-sdk
+```
+
+Node 22 or later. **Server side only**: the SDK authenticates with a service-account
+credential, which must never reach a browser. It has no runtime dependencies.
+
+Every release is published with build provenance, so you can verify that the package you
+installed was built from the source in this repository:
+
+```sh
+npm audit signatures
+```
+
 ## Documentation
 
-Documentation for the SDK lives in the qshield help centre, inside your own
-deployment. This repository carries source and licence only.
+Full documentation lives in the help centre inside your own qshield deployment, alongside
+the version you are running.
 
-## This repository is generated
+## Support
 
-Every file here is written by the qshield release pipeline from the private
-monorepo where the SDKs are developed, reviewed and tested. Each release replaces
-this tree wholesale, so a change committed here does not survive the next one.
-
-Please raise issues and questions through your usual qshield support channel
-rather than as pull requests.
-
-## Why it exists
-
-The SDKs are developed in the monorepo alongside the server they talk to, because
-that is the only place the guards tying each client call to a real server route
-can run. They are published from here because npm's credential-free publishing,
-and the build provenance attached to every release, both require a public source
-repository.
+Please raise questions through your usual qshield support channel.
 
 ## Licence
 
