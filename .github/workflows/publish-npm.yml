@@ -2,8 +2,15 @@
 #
 # AUTHENTICATION IS npm TRUSTED PUBLISHING OVER GITHUB OIDC. The credential is
 # minted for this job and expires with it, so no npm token is stored anywhere.
-# NODE_AUTH_TOKEN is deliberately never set: its absence is what makes the npm
-# CLI reach for the OIDC exchange instead of looking for a stored credential.
+# No npm token is configured, on purpose, and there is none to configure.
+#
+# WHAT TRIGGERS THE OIDC EXCHANGE IS THE `id-token: write` PERMISSION, NOT THE
+# ABSENCE OF A TOKEN. npm attempts the exchange whenever it is running in a
+# recognised CI system and the two ACTIONS_ID_TOKEN_REQUEST_* variables that
+# permission provides are present, and on success it uses the credential it gets
+# back in preference to anything the .npmrc configured. So removing the
+# permission does not fall back to token auth - it removes authentication
+# altogether. Nothing here should be read as "npm looks for a token first".
 #
 # GITHUB-HOSTED RUNNERS ONLY, for two independent reasons. npm does not accept
 # the OIDC exchange from a self-hosted runner, and a self-hosted runner attached
@@ -48,7 +55,7 @@ jobs:
       run:
         working-directory: js
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.inputs.tag || github.ref_name }}
 
@@ -73,13 +80,45 @@ jobs:
           fi
           echo "::notice::publishing @qnulabs/qshield-sdk@${manifest_version}"
 
-      # registry-url points npm at the public registry. NODE_AUTH_TOKEN is
-      # deliberately NOT set anywhere in this job: its absence is what makes the
-      # npm CLI reach for the OIDC exchange instead of a stored credential.
-      - uses: actions/setup-node@v6
+      # registry-url points npm at the public registry, and it is also what makes
+      # setup-node generate an .npmrc at all. NODE_AUTH_TOKEN is deliberately not
+      # set anywhere in this job; the step after this one deals with the
+      # consequence.
+      - uses: actions/setup-node@v7
         with:
           node-version: "24"
           registry-url: "https://registry.npmjs.org"
+
+      # setup-node writes `_authToken=${NODE_AUTH_TOKEN}` into the .npmrc it
+      # generates whenever registry-url is set, and nothing here sets that
+      # variable, so the placeholder is never resolved. Removing the line is not
+      # cosmetic: it is what makes an OIDC failure legible. With a garbage token
+      # configured, npm treats the request as authenticated and a failed exchange
+      # surfaces as a 403 about permissions on a package we own, which reads like
+      # a misconfigured trusted publisher. With no token line, the same failure
+      # surfaces as ENEEDAUTH, which says what actually happened. It also keeps
+      # pnpm from warning about an unresolvable credential on every read.
+      #
+      # Up to setup-node v6 this mattered less, because the action ALSO exported
+      # a dummy NODE_AUTH_TOKEN that resolved the placeholder to a fixed
+      # nonsense string. v7 removed that export, so from v7 on the file carries
+      # a literal unexpanded `${NODE_AUTH_TOKEN}`.
+      #
+      # The assertion is deliberate. If a future setup-node stops writing the
+      # line, the delete becomes a silent no-op and only the assertion notices.
+      # The file is not printed: this workflow runs in a PUBLIC repository, and
+      # an .npmrc is the wrong thing to put in a public log even when today's
+      # copy holds nothing secret.
+      - name: Drop the unresolved auth placeholder from the generated .npmrc
+        run: |
+          set -euo pipefail
+          npmrc="${NPM_CONFIG_USERCONFIG:?setup-node did not export NPM_CONFIG_USERCONFIG}"
+          sed -i '/_authToken/d' "${npmrc}"
+          if grep -q '_authToken' "${npmrc}"; then
+            echo "::error::an _authToken line survived in ${npmrc}; npm would treat this publish as token-authenticated"
+            exit 1
+          fi
+          echo "::notice::.npmrc carries the registry pin and no auth token"
 
       # Trusted publishing needs npm >= 11.5.1. Node 24 ships an 11.x npm, but pin
       # it rather than depend on which patch the runner image happens to carry - a
