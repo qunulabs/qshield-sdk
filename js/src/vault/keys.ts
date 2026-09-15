@@ -20,7 +20,7 @@
 
 import { fromBase64, toBase64 } from '../internal/binary.js'
 import type { Requester } from '../internal/requester.js'
-import type { KeyAlgorithmId } from './algorithms.js'
+import type { StoredKeyAlgorithmId } from './algorithms.js'
 import { array, bool, date, num, optDate, optStr, record, records, str } from './decode.js'
 import type {
   EncapsulateResult,
@@ -56,10 +56,13 @@ export interface CreateKeyOptions {
    */
   readonly alias: string
   /**
-   * The algorithm to build the key from. Your editor offers the algorithms this
-   * release ships; any identifier this deployment knows is accepted.
+   * The algorithm to build the key from. Your editor offers the STORED-key
+   * algorithms this release ships; any identifier this deployment knows is
+   * accepted. The data-key-only entries are deliberately not among them: a
+   * stored key must serve a purpose, and qshield performs no operation in the
+   * AES-CCM and AES-CBC modes, so asking for one here is refused.
    */
-  readonly algorithmId: KeyAlgorithmId
+  readonly algorithmId: StoredKeyAlgorithmId
   /** What the key is for. The algorithm must be able to serve it. */
   readonly purpose: KeyPurpose
   /**

@@ -26,7 +26,7 @@
 
 import { fromBase64, toBase64 } from '../internal/binary.js'
 import type { Requester } from '../internal/requester.js'
-import type { KeyAlgorithmId } from './algorithms.js'
+import type { DataKeyAlgorithmId } from './algorithms.js'
 import { record, str } from './decode.js'
 import type { DataKey } from './types.js'
 
@@ -39,11 +39,19 @@ export interface GenerateDataKeyOptions {
    * deployment default, which is what you want unless your own encryption code
    * needs a particular key length.
    *
-   * Typed as a string rather than a fixed set, for the same reason as everywhere
-   * else in this package: qshield's algorithm catalogue grows with releases, and
-   * a closed list here would make an older SDK refuse a newer algorithm.
+   * Your editor offers KNOWN_DATA_KEY_ALGORITHMS, which is a different set from
+   * the stored-key one: RSA is not among them, and AES-CCM and AES-CBC are,
+   * because a data key needs no cipher on our side. Typed as a string rather
+   * than a fixed set, for the same reason as everywhere else in this package:
+   * qshield's algorithm catalogue grows with releases, and a closed list here
+   * would make an older SDK refuse a newer algorithm.
+   *
+   * AES-CBC has no integrity check. `aes_128_cbc` and `aes_256_cbc` give you
+   * confidentiality only, so authenticate the ciphertext yourself - an HMAC key
+   * from `keys.create` over the ciphertext and the IV - or pick a GCM or
+   * ChaCha20-Poly1305 key, which authenticate on their own.
    */
-  readonly algorithmId?: KeyAlgorithmId
+  readonly algorithmId?: DataKeyAlgorithmId
   readonly signal?: AbortSignal
 }
 

@@ -113,5 +113,16 @@ export type {
   TimeKeyPublicKey,
   TimeKeyWindowStatus,
 } from './vault/types.js'
-export { KNOWN_KEY_ALGORITHMS } from './vault/algorithms.js'
-export type { KeyAlgorithmId, KnownKeyAlgorithmId } from './vault/algorithms.js'
+export {
+  KNOWN_KEY_ALGORITHMS,
+  KNOWN_STORED_KEY_ALGORITHMS,
+  KNOWN_DATA_KEY_ALGORITHMS,
+} from './vault/algorithms.js'
+export type {
+  KeyAlgorithmId,
+  KnownKeyAlgorithmId,
+  StoredKeyAlgorithmId,
+  KnownStoredKeyAlgorithmId,
+  DataKeyAlgorithmId,
+  KnownDataKeyAlgorithmId,
+} from './vault/algorithms.js'

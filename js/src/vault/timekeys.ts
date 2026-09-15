@@ -36,7 +36,7 @@ import { fromBase64, toBase64 } from '../internal/binary.js'
 import { ResponseNotUnderstood } from '../internal/codes.js'
 import { fromEntry, ProtocolError } from '../internal/errors.js'
 import type { Requester } from '../internal/requester.js'
-import type { KeyAlgorithmId } from './algorithms.js'
+import type { StoredKeyAlgorithmId } from './algorithms.js'
 import { array, bool, date, optDate, optStr, record, str } from './decode.js'
 import type {
   CreatedTimeConstrainedKey,
@@ -71,7 +71,7 @@ export interface CreateTimeConstrainedKeyOptions {
    * derives the key's purpose from it, and a symmetric algorithm is refused
    * because there would be no public half to hand out.
    */
-  readonly algorithmId: KeyAlgorithmId
+  readonly algorithmId: StoredKeyAlgorithmId
   /** When the key starts working. */
   readonly notBefore: Date
   /**
