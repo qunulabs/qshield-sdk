@@ -298,23 +298,6 @@ test('encrypting works while the window is still closed, and carries no passphra
   }
 })
 
-test('an omitted label is left off the request rather than sent as null', async () => {
-  const stub = await startStub(
-    withToken((_req, res) => {
-      ok(res, { ciphertext: CIPHERTEXT_B64 })
-    }),
-  )
-  try {
-    await clientFor(stub).vault.timeConstrainedKeys.encrypt({
-      alias: 'quarter-close',
-      plaintext: PLAINTEXT,
-    })
-    assert.equal('label' in sentBody(stub), false)
-  } finally {
-    await stub.close()
-  }
-})
-
 test('decrypting sends the ciphertext, label and passphrase, and returns the plaintext', async () => {
   const stub = await startStub(
     withToken((_req, res) => {

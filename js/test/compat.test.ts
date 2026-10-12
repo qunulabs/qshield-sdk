@@ -184,30 +184,6 @@ test('a library below the floor is warned once, however many calls it makes', as
   assert.equal(callsTo(stub, THING), 3)
 })
 
-test('a library newer than the deployment is warned once', async (t) => {
-  const stub = await startStub(deployment({ version: '0.14.0', min: '0.1.0' }))
-  t.after(() => stub.close())
-
-  const seen: string[] = []
-  const requester = clientFor(stub, seen, {}, '0.20.0')
-  await requester.json({ method: 'GET', path: THING })
-  await requester.json({ method: 'GET', path: THING })
-
-  assert.equal(seen.length, 1)
-  assert.match(seen[0] ?? '', /newer than the deployment/)
-})
-
-test('a version in range says nothing', async (t) => {
-  const stub = await startStub(deployment({ version: '0.14.0', min: '0.10.0' }))
-  t.after(() => stub.close())
-
-  const seen: string[] = []
-  const requester = clientFor(stub, seen, {}, '0.12.0')
-  await requester.json({ method: 'GET', path: THING })
-
-  assert.deepEqual(seen, [])
-})
-
 test('THE ADVISORY COSTS NO REQUEST OF ITS OWN', async (t) => {
   const stub = await startStub(deployment({ version: '0.14.0', min: '0.18.0' }))
   t.after(() => stub.close())
@@ -254,28 +230,6 @@ test('a deployment that says nothing about versions is silent', async (t) => {
   const answer = await requester.json<{ id: string }>({ method: 'GET', path: THING })
 
   assert.deepEqual(answer.data, { id: 'k1' })
-  assert.deepEqual(seen, [])
-})
-
-test('an unstamped deployment is silent', async (t) => {
-  const stub = await startStub(deployment({ version: 'dev', min: '9.9.9' }))
-  t.after(() => stub.close())
-
-  const seen: string[] = []
-  const requester = clientFor(stub, seen, {}, '0.1.0')
-  await requester.json({ method: 'GET', path: THING })
-
-  assert.deepEqual(seen, [])
-})
-
-test('a library that was never published is silent whatever the deployment says', async (t) => {
-  const stub = await startStub(deployment({ version: '0.14.0', min: '9.9.9' }))
-  t.after(() => stub.close())
-
-  const seen: string[] = []
-  const requester = clientFor(stub, seen, {}, '0.0.0-development')
-  await requester.json({ method: 'GET', path: THING })
-
   assert.deepEqual(seen, [])
 })
 

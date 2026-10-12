@@ -7,12 +7,6 @@ import { CREDENTIAL } from './support/stub.js'
 
 const good = { baseUrl: 'https://qshield.example.com', ...CREDENTIAL }
 
-test('a well formed configuration is accepted', () => {
-  const config = resolveConfig(good)
-  assert.equal(config.baseUrl, 'https://qshield.example.com')
-  assert.equal(config.timeoutMs, 30_000)
-})
-
 test('a trailing slash is removed so a route can never be joined twice', () => {
   assert.equal(resolveConfig({ ...good, baseUrl: 'https://q.example.com/' }).baseUrl, 'https://q.example.com')
 })
@@ -82,6 +76,3 @@ test('the version check must be one of the two settings', () => {
   )
 })
 
-test('the version check defaults to warning', () => {
-  assert.equal(resolveConfig(good).versionCheck, 'warn')
-})

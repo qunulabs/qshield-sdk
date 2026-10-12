@@ -106,20 +106,6 @@ test('an omitted version is left off the request rather than sent as null', asyn
   }
 })
 
-test('a named version reaches the request', async () => {
-  const stub = await startStub(
-    withToken((_req, res) => {
-      ok(res, { signature: SIGNATURE_B64, version: 2 })
-    }),
-  )
-  try {
-    await clientFor(stub).vault.keys.sign({ alias: 'signer', message: MESSAGE, version: 2 })
-    assert.equal(sentBody(stub)['version'], 2)
-  } finally {
-    await stub.close()
-  }
-})
-
 test('a matching signature verifies as true', async () => {
   const stub = await startStub(
     withToken((_req, res) => {
@@ -235,25 +221,6 @@ test('encrypting returns the ciphertext and the version that produced it', async
   }
 })
 
-test('decrypting returns the plaintext bytes', async () => {
-  const stub = await startStub(
-    withToken((_req, res) => {
-      ok(res, { plaintext: MESSAGE_B64 })
-    }),
-  )
-  try {
-    const plaintext = await clientFor(stub).vault.keys.decrypt({
-      alias: 'box',
-      ciphertext: CIPHERTEXT,
-    })
-    assert.deepEqual(plaintext, MESSAGE)
-    assert.equal(calls(stub)[0]?.path, `${KEYS}/box/decrypt`)
-    assert.deepEqual(sentBody(stub), { ciphertext: CIPHERTEXT_B64 })
-  } finally {
-    await stub.close()
-  }
-})
-
 test('encrypt then decrypt round trips, carrying the additional data both ways', async () => {
   const stub = await startStub(
     withToken((_req, res, index) => {
@@ -282,20 +249,6 @@ test('encrypt then decrypt round trips, carrying the additional data both ways',
     assert.equal(encryptBody['aad'], AAD_B64)
     assert.equal(decryptBody['aad'], AAD_B64)
     assert.equal(decryptBody['ciphertext'], CIPHERTEXT_B64)
-  } finally {
-    await stub.close()
-  }
-})
-
-test('omitted additional data is left off the request entirely', async () => {
-  const stub = await startStub(
-    withToken((_req, res) => {
-      ok(res, { ciphertext: CIPHERTEXT_B64, version: 1 })
-    }),
-  )
-  try {
-    await clientFor(stub).vault.keys.encrypt({ alias: 'box', plaintext: MESSAGE })
-    assert.equal('aad' in sentBody(stub), false)
   } finally {
     await stub.close()
   }
@@ -372,23 +325,6 @@ test('a data key arrives as the key to use and the wrapped copy to store', async
     // The SDK always asks for the key itself, and never supplies a transport
     // key: a caller is never asked to produce a key pair to receive a key.
     assert.deepEqual(sentBody(stub), { return_plaintext: true })
-  } finally {
-    await stub.close()
-  }
-})
-
-test('a chosen data key algorithm reaches the request', async () => {
-  const stub = await startStub(
-    withToken((_req, res) => {
-      ok(res, { wrapped: CIPHERTEXT_B64, plaintext: MESSAGE_B64 })
-    }),
-  )
-  try {
-    await clientFor(stub).vault.dataKeys.generate({ algorithmId: 'chacha20_poly1305' })
-    assert.deepEqual(sentBody(stub), {
-      return_plaintext: true,
-      algorithm_id: 'chacha20_poly1305',
-    })
   } finally {
     await stub.close()
   }

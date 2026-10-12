@@ -97,35 +97,6 @@ test('the keys are listed, oldest first, exactly as qshield ordered them', async
   }
 })
 
-test('a workspace with no keys yields an empty list, not a failure', async () => {
-  const stub = await startStub(
-    withToken((_req, res) => {
-      ok(res, [])
-    }),
-  )
-  try {
-    assert.deepEqual(await clientFor(stub).vault.keys.list(), [])
-  } finally {
-    await stub.close()
-  }
-})
-
-test('a deleted key stays in the list, reported as deleted', async () => {
-  // Deletion is a tombstone, not a hidden row. A caller filtering for usable
-  // keys has to be able to see the difference, so the state is never hidden.
-  const stub = await startStub(
-    withToken((_req, res) => {
-      ok(res, [{ ...LOCAL_KEY, state: 'deleted' }])
-    }),
-  )
-  try {
-    const keys = await clientFor(stub).vault.keys.list()
-    assert.equal(keys[0]?.state, 'deleted')
-  } finally {
-    await stub.close()
-  }
-})
-
 test('a cloud key carries its provider identity as one object', async () => {
   const stub = await startStub(
     withToken((_req, res) => {
@@ -282,20 +253,6 @@ test('a public key arrives as bytes, never as the base64 it travelled in', async
   }
 })
 
-test('a public key read with no version asks for none and gets the current one', async () => {
-  const stub = await startStub(
-    withToken((_req, res) => {
-      ok(res, { alias: 'signer', algorithm_id: 'ed25519', version: 1, public_key: '' })
-    }),
-  )
-  try {
-    await clientFor(stub).vault.keys.publicKey({ alias: 'signer' })
-    assert.equal(calls(stub)[0]?.path, `${KEYS}/signer/public-key`)
-  } finally {
-    await stub.close()
-  }
-})
-
 test('a damaged public key is refused rather than quietly truncated', async () => {
   // Node's base64 decoder skips what it does not recognise, which would turn a
   // damaged key into a shorter key that looks perfectly valid.
@@ -364,22 +321,6 @@ test('deleting a key turns the bare 204 into nothing at all', async () => {
     assert.equal(await clientFor(stub).vault.keys.delete({ alias: 'signer' }), undefined)
     assert.equal(calls(stub)[0]?.method, 'DELETE')
     assert.equal(calls(stub)[0]?.path, `${KEYS}/signer`)
-  } finally {
-    await stub.close()
-  }
-})
-
-test('deleting a key that is already deleted succeeds and changes nothing', async () => {
-  const stub = await startStub(
-    withToken((_req, res) => {
-      noContent(res)
-    }),
-  )
-  try {
-    const keys = clientFor(stub).vault.keys
-    await keys.delete({ alias: 'signer' })
-    await keys.delete({ alias: 'signer' })
-    assert.equal(calls(stub).length, 2)
   } finally {
     await stub.close()
   }

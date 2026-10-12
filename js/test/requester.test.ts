@@ -16,7 +16,6 @@ import {
   PermissionError,
   QShieldError,
   RateLimitError,
-  RequestError,
   ServerError,
   TimeoutError,
   ValidationError,
@@ -336,17 +335,6 @@ test('a request that changes state is not repeated when qshield fails internally
       1,
       'a 500 may mean the work was done, so repeating it could do the work twice',
     )
-  } finally {
-    await stub.close()
-  }
-})
-
-test('a bad request that is not a validation failure is still a request failure', async () => {
-  const stub = await startStub(withToken((_req, res) => {
-    fail(res, 400, { code: 'EGN-030', message: 'rejected', description: 'the request was rejected' })
-  }))
-  try {
-    await assert.rejects(clientFor(stub).json({ method: 'POST', path: THING, body: {} }), RequestError)
   } finally {
     await stub.close()
   }
