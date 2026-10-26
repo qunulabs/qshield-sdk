@@ -1,6 +1,6 @@
 {
   "name": "@qnulabs/qshield-sdk",
-  "version": "2.53.1",
+  "version": "2.53.2",
   "license": "Apache-2.0",
   "type": "module",
   "sideEffects": false,
