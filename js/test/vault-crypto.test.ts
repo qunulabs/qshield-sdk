@@ -336,7 +336,7 @@ test('a data key refused for want of permission raises the typed failure', async
       fail(res, 403, {
         code: 'EVT-010',
         message: 'you are not allowed to receive a data key in the clear',
-        description: 'grant vault:datakey:plaintext',
+        description: 'grant vault:datakey:plaintext:read',
       })
     }),
   )
@@ -346,7 +346,7 @@ test('a data key refused for want of permission raises the typed failure', async
       (error: unknown) =>
         error instanceof PermissionError &&
         error.code === 'EVT-010' &&
-        error.description.includes('vault:datakey:plaintext'),
+        error.description.includes('vault:datakey:plaintext:read'),
     )
   } finally {
     await stub.close()
